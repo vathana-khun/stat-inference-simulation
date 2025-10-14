@@ -1,0 +1,7 @@
+"0",""
+"0",""
+"0","# 3. ADD THE 95% CONFIDENCE INTERVAL CUTOFF LINE"
+"0","# On the log-likelihood scale, the cutoff was max_ll - 1.92"
+"0","# On the normalized likelihood scale, this becomes exp(-1.92)"
+"0","cutoff_normalized <- exp(-qchisq(0.95, df = 1) / 2)"
+"0","abline(h = cutoff_normalized, col = ""green"", lty = 2, lwd = 2)"

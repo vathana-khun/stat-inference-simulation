@@ -67,13 +67,13 @@ length <- 200
 beta1_hat <- model$coefficients[2]
 beta0_hat <- model$coefficients[1]
 
-upper_beta1 = beta1_hat +  0.1
-lower_beta1 = beta1_hat -  0.1
+upper_beta1 = beta1_hat +  1
+lower_beta1 = beta1_hat -  0.8
   
-beta1_grid <- seq(lower_beta1 , upper_beta1,length.out = length)
+beta1_grid <- seq(lower_beta1 , upper_beta1, 0.0001)
 beta1_likelihood_grid <- numeric(length)
 
-for(i in seq_along(beta1_grid)) {
+for(i in 1 : length(beta1_grid)) {
   beta1 <- beta1_grid[i]
   params <- c(beta0_hat,beta1)
 
@@ -82,7 +82,6 @@ for(i in seq_along(beta1_grid)) {
                                                       y = data$high_lifeExp)
 }
 
-print(beta1_likelihood_grid)
 
 plot(beta1_grid, beta1_likelihood_grid, 
      type = "l",                      # line plot
@@ -91,10 +90,10 @@ plot(beta1_grid, beta1_likelihood_grid,
      xlab = expression(beta[1]),     # x-axis label with math notation
      ylab = "Likelihood",            # y-axis label
      main = "Likelihood vs Beta1")   # plot title
-
+ 
 # Add a vertical dashed blue line at beta1 = 1.591683
-abline(v = 1.591683, col = "blue", lty = 3, lwd = 2)
-abline(v = 3.106073, col = "blue", lty = 3, lwd = 2)
+#abline(v = 1.591683, col = "blue", lty = 3, lwd = 2)
+#abline(v = 3.106073, col = "blue", lty = 3, lwd = 2)
 abline(v =  1.68580, col = "red", lty = 3, lwd = 2)
 abline(v = 3.219953, col = "red", lty = 3, lwd = 2)
 abline(v = beta1_hat, col = 'black',lty = 3, lwd = 2)
@@ -106,9 +105,6 @@ max_log_likelihood <- max(beta1_likelihood_grid)
 From the graphic, $\hat\beta1$ profile likelihood curve show a relatively broad and wide curve around it's maximum. This indicated that there is a moderate amount of uncertainty in estimating the true values of $\beta1$. Looking at the 95 confidence interval cut off we can also see that
 
 ```{r}
-# Your existing code to generate the log-likelihood grid
-# ... (assuming beta1_likelihood_grid and beta1_hat are in your environment)
-# ...
 
 # 1. NORMALIZE THE LIKELIHOOD
 # This creates a grid where the peak is 1
@@ -132,7 +128,6 @@ plot(beta1_grid, normalized_likelihood_grid,
 # On the normalized likelihood scale, this becomes exp(-1.92)
 cutoff_normalized <- exp(-qchisq(0.95, df = 1) / 2)
 abline(h = cutoff_normalized, col = "green", lty = 2, lwd = 2)
-
 
 # 4. ADD YOUR EXISTING VERTICAL LINES
 abline(v = 1.591683, col = "blue", lty = 3, lwd = 2)
@@ -161,4 +156,16 @@ legend("topright",
 
 ```         
 1.511315   3.545518
+```
+
+```{r}
+plot( data$gdpPercap, data$lifeExp)
+plot( data$log_gdp, data$lifeExp)
+abline(h = median(data$lifeExp))
+plot( data$log_gdp, data$high_lifeExp)
+
+```
+
+```{r}
+summary(lm(data = data, lifeExp ~ log_gdp))
 ```

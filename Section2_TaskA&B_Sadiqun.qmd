@@ -1,0 +1,157 @@
+---
+title: "Section2_PartA&B"
+format: pdf
+editor: visual
+---
+
+## Section 2 — Predicting Good Health (UNSDG 3)
+
+### Part A: Building the Model with Maximum Likelihood
+
+#### Task 1 - Log-likelihood
+
+We model whether life expectancy exceeds the median using a binary response and a single predictor (log GDP per capita).
+
+-   Data: $(y_i, x_i)$ for $i=1,\ldots,n$, where $y_i \in \{0,1\}$ and $x_i = \log(\text{gdpPercap}_i)$.
+-   Model: $\operatorname{logit}(p_i) = \beta_0 + \beta_1 x_i$, where $p_i = \Pr(Y_i=1 \mid x_i)$.
+
+**Likelihood** $$
+\begin{aligned}
+L(\beta_0,\beta_1)
+&= \prod_{i=1}^{n} p_i^{\,y_i}\,(1-p_i)^{\,1-y_i},\\
+p_i &= \frac{\exp(\beta_0+\beta_1 x_i)}{1+\exp(\beta_0+\beta_1 x_i)}.
+\end{aligned}
+$$
+
+**Log-likelihood** $$
+\ell(\beta_0,\beta_1)
+= \sum_{i=1}^{n}\Big[\, y_i(\beta_0+\beta_1 x_i)\;-\;\log\!\big(1+\exp(\beta_0+\beta_1 x_i)\big)\,\Big].
+$$
+
+#### Task 2 - Implement log-likelihood
+
+```{r}
+loglik_logistic <- function(par, y, x){
+beta0 <- par[1]
+beta1 <- par[2]
+eta <- beta0 + beta1 * x
+sum(y * eta - log(1 + exp(eta)))
+}
+```
+
+This function `loglik_logistic` takes the parameter vector `par = c(beta0, beta1)` together with the data vectors `y` (binary 0/1) and `x = log(gdpPercap)`, forms the linear predictor ηi=β0+β1xi\eta_i=\beta_0+\beta_1 x_iηi​=β0​+β1​xi​, and returns the single numeric value of the logistic/Bernoulli log-likelihood
+
+### Data preparation
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(gapminder)
+
+data <- gapminder %>%
+  filter(year == 2007) %>%
+mutate(
+high_lifeExp = ifelse(lifeExp > median(lifeExp), 1, 0),
+log_gdp = log(gdpPercap)
+)
+```
+
+### Response and Predictor
+
+```{r}
+y <- data$high_lifeExp
+x <- data$log_gdp
+stopifnot(length(y) == length(x))
+```
+
+#### Task 3 - Maximise log-likelihood with `optim()`
+
+```{r}
+
+# Initial values for beta0 and beta1
+par0 <- c(0, 0)
+
+# Maximise the log likelihood 
+optim_fit <- optim(
+par = par0,
+fn = loglik_logistic,
+y = y,
+x = x,
+method = "BFGS",
+control = list(fnscale = -1),
+hessian = TRUE
+)
+
+# Estimates and checks
+
+beta_hat <- optim_fit$par
+names(beta_hat) <- c("beta0_hat","beta1_hat")
+ll_max <- optim_fit$value
+conv <- optim_fit$convergence
+
+
+beta_hat
+ll_max
+conv
+```
+
+#### Task 4 - Fit the model with `glm()`
+
+```{r}
+model_glm <- glm(high_lifeExp ~ log_gdp, data = data, family = binomial)
+coef_glm <- coef(model_glm)
+coef_glm
+```
+
+#### Task 5 - Compare `optim()` and `glm()` coefficients
+
+```{r}
+
+# Comparison
+comp <- rbind(optim = beta_hat,
+glm = coef_glm)
+comp
+
+# Numerical differences
+diff <- comp["optim", ] - comp["glm", ]
+diff
+```
+
+The estimates from `optim()` and `glm()` are essentially identical, differing only by numerical tolerance: about $10^{-4}$ for $\hat\beta_0$ and $10^{-5}$ for $\hat\beta_1$. This confirms that our log-likelihood implementation and maximisation with `optim()` (BFGS, `fnscale = -1`) recover the same MLEs as the built-in `glm()` fit.
+
+### **Part B: Estimating Uncertainty with Fisher Information**
+
+#### Task 1 - Extract and display the Hessian matrix
+
+```{r}
+H <- optim_fit$hessian
+H
+```
+
+#### Task 2 - Compute and display the Fisher information matrix
+
+```{r}
+I_hat <- -H
+I_hat
+```
+
+#### Task 3 - Compute and display the standard errors
+
+```{r}
+V_hat <- solve(I_hat)
+se <- sqrt(diag(V_hat))
+names(se) <- c("beta0","beta1")
+se
+```
+
+#### Task 4 - Manually construct the 95% confidence intervals 
+
+```{r}
+beta_hat_vec <- setNames(optim_fit$par, c("beta0","beta1"))
+z <- 1.96
+CI <- cbind(
+lower = beta_hat_vec - z * se,
+upper = beta_hat_vec + z * se
+)
+CI
+```

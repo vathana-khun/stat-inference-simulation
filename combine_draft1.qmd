@@ -1,0 +1,354 @@
+---
+title: "STAT3191/6191: Group Project Submission"
+subtitle: "Group Number: Group 17"
+author:
+  - name: "(Group Leader) Vathana Khun (48302031)"
+  - name: "Sadiqun Nur Ayan (48920959)"
+  - name: "Raja Pedapudi (46562753)"
+   
+date: "26-Sept-2025"
+format: pdf
+editor: visual
+---
+
+## Part A: Natural Variation in Completion Times
+
+```{r}
+#| message: false
+# Load required library
+library(matrixStats)
+library(kableExtra)
+```
+
+```{r}
+# Simulation-Based Inference: Estimating Completion Time for Security Training
+set.seed(42)
+
+# Parameters
+n <- 250              # Sample size per simulation
+n_sim <- 1000         # Number of simulations
+lambda <- 1           # Rate parameter for Exponential(1)
+
+## Section 1, Part A : Natural Variation in Completion Times ##
+
+# Step 1: Generate 1000 samples of size 250 from Exponential(1)
+samples <- replicate(n_sim, rexp(n, rate = lambda))
+
+# Step 2: Compute estimators for each sample
+sample_means <- colMeans(samples)
+sample_medians <- apply(samples, 2, median)
+sample_trimmed_means <- apply(samples, 2, function(x) mean(x, trim = 0.1))
+
+# Step 3: Calculate Bias, Monte Carlo Standard Deviation (MCSD), and Mean Squared Error (MSE)
+true_mean <- 1  # Theoretical mean of Exponential(1)
+
+# Bias = mean of estimates - true mean
+bias_mean <- mean(sample_means) - true_mean
+bias_median <- mean(sample_medians) - true_mean
+bias_trimmed <- mean(sample_trimmed_means) - true_mean
+
+# Monte Carlo Standard Deviation = standard deviation of estimates
+mcsd_mean <- sd(sample_means)
+mcsd_median <- sd(sample_medians)
+mcsd_trimmed <- sd(sample_trimmed_means)
+
+# Mean Squared Error = mean squared difference from true mean
+mse_mean <- mean((sample_means - true_mean)^2)
+mse_median <- mean((sample_medians - true_mean)^2)
+mse_trimmed <- mean((sample_trimmed_means - true_mean)^2)
+
+# Step 4: Summarise results in a table
+results_partA <- data.frame(
+  Estimator = c("Mean", "Median", "Trimmed Mean (10%)"),
+  Bias = c(bias_mean, bias_median, bias_trimmed),
+  MCSD = c(mcsd_mean, mcsd_median, mcsd_trimmed),
+  MSE = c(mse_mean, mse_median, mse_trimmed)
+)
+results_partA%>%
+  kable()%>%
+  kable_classic(full_width = F, html_font = "Cambria")
+  
+
+```
+
+## Section 1, Part B: Logging Error Introduces Outlines
+
+```{r}
+
+# Step 1: Generate 1000 contaminated samples:
+# 90% from Exp(1), 10% from Exp(0.02) to simulate contamination
+lambda1 <- 1
+lambda2 <- 0.02
+contamination_rate <- 0.1
+
+samples_contaminated <- matrix(NA, nrow = n, ncol = n_sim)
+
+for (i in 1:n_sim) {
+  # For each of the n data points, decide which distribution to draw from
+  # 1 = clean (Exp(1)), 2 = contaminated (Exp(0.02))
+  # This is the Bernoulli trial step
+  dist_choice <- sample(c(1, 2), 
+                        size = n, 
+                        replace = TRUE, 
+                        prob = c(1 - contamination_rate, contamination_rate))
+  
+  # Generate the values based on the random choices
+  clean_values <- rexp(sum(dist_choice == 1), rate = lambda1)
+  contaminated_values <- rexp(sum(dist_choice == 2), rate = lambda2)
+  
+  # Assign them to the correct positions in the sample vector
+  current_sample <- numeric(n)
+  current_sample[dist_choice == 1] <- clean_values
+  current_sample[dist_choice == 2] <- contaminated_values
+  
+  samples_contaminated[, i] <- current_sample
+  samples_contaminated[, i] <- sample(samples_contaminated[, i])
+}
+
+# Step 2: Compute estimators for contaminated samples
+sample_means_cont <- colMeans(samples_contaminated)
+sample_medians_cont <- apply(samples_contaminated, 2, median)
+sample_trimmed_means_cont <- apply(samples_contaminated, 2, function(x) mean(x, trim = 0.1))
+
+# Step 3: Calculate Bias, MCSD, MSE for contaminated data
+# True mean for mixture: 0.9 * 1/lambda1 + 0.1 * 1/lambda2
+true_mean_cont <- 0.9 * (1 / lambda1) + 0.1 * (1 / lambda2)  # = 5.9
+
+bias_mean_cont <- mean(sample_means_cont) - true_mean_cont
+bias_median_cont <- mean(sample_medians_cont) - true_mean_cont
+bias_trimmed_cont <- mean(sample_trimmed_means_cont) - true_mean_cont
+
+mcsd_mean_cont <- sd(sample_means_cont)
+mcsd_median_cont <- sd(sample_medians_cont)
+mcsd_trimmed_cont <- sd(sample_trimmed_means_cont)
+
+mse_mean_cont <- mean((sample_means_cont - true_mean_cont)^2)
+mse_median_cont <- mean((sample_medians_cont - true_mean_cont)^2)
+mse_trimmed_cont <- mean((sample_trimmed_means_cont - true_mean_cont)^2)
+
+# Step 4: Summarise contaminated results in a table
+results_partB <- data.frame(
+  Estimator = c("Mean", "Median", "Trimmed Mean (10%)"),
+  Esimated = c(mean(sample_means_cont),mean(sample_medians_cont), mean(sample_trimmed_means_cont)),
+  Bias = c(bias_mean_cont, bias_median_cont, bias_trimmed_cont),
+  MCSD = c(mcsd_mean_cont, mcsd_median_cont, mcsd_trimmed_cont),
+  MSE = c(mse_mean_cont, mse_median_cont, mse_trimmed_cont)
+)
+
+results_partB%>%
+  kable()%>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+
+```{r}
+results_partA
+```
+
+```{r}
+results_partB
+```
+
+## Section 2 — Predicting Good Health (UNSDG 3)
+
+### Part A: Building the Model with Maximum Likelihood
+
+#### Task 1 - Log-likelihood
+
+We model whether life expectancy exceeds the median using a binary response and a single predictor (log GDP per capita).
+
+-   Data: $(y_i, x_i)$ for $i=1,\ldots,n$, where $y_i \in \{0,1\}$ and $x_i = \log(\text{gdpPercap}_i)$.
+-   Model: $\operatorname{logit}(p_i) = \beta_0 + \beta_1 x_i$, where $p_i = \Pr(Y_i=1 \mid x_i)$.
+
+**Likelihood** $$
+\begin{aligned}
+L(\beta_0,\beta_1)
+&= \prod_{i=1}^{n} p_i^{\,y_i}\,(1-p_i)^{\,1-y_i},\\
+p_i &= \frac{\exp(\beta_0+\beta_1 x_i)}{1+\exp(\beta_0+\beta_1 x_i)}.
+\end{aligned}
+$$
+
+**Log-likelihood** $$
+\ell(\beta_0,\beta_1)
+= \sum_{i=1}^{n}\Big[\, y_i(\beta_0+\beta_1 x_i)\;-\;\log\!\big(1+\exp(\beta_0+\beta_1 x_i)\big)\,\Big].
+$$
+
+#### Task 2 - Implement log-likelihood
+
+```{r}
+loglik_logistic <- function(par, y, x){
+beta0 <- par[1]
+beta1 <- par[2]
+eta <- beta0 + beta1 * x
+sum(y * eta - log(1 + exp(eta)))
+}
+```
+
+This function `loglik_logistic` takes the parameter vector `par = c(beta0, beta1)` together with the data vectors `y` (binary 0/1) and `x = log(gdpPercap)`, forms the linear predictor $\eta_i=\beta_0+\beta_1 x_i​$, and returns the single numeric value of the logistic/Bernoulli log-likelihood
+
+### Data preparation
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(gapminder)
+
+data <- gapminder %>%
+  filter(year == 2007) %>%
+mutate(
+high_lifeExp = ifelse(lifeExp > median(lifeExp), 1, 0),
+log_gdp = log(gdpPercap)
+)
+```
+
+### Response and Predictor
+
+```{r}
+y <- data$high_lifeExp
+x <- data$log_gdp
+stopifnot(length(y) == length(x))
+```
+
+#### Task 3 - Maximise log-likelihood with `optim()`
+
+```{r}
+
+# Initial values for beta0 and beta1
+par0 <- c(0, 0)
+
+# Maximise the log likelihood 
+optim_fit <- optim(
+par = par0,
+fn = loglik_logistic,
+y = y,
+x = x,
+method = "BFGS",
+control = list(fnscale = -1),
+hessian = TRUE
+)
+
+# Estimates and checks
+
+beta_hat <- optim_fit$par
+names(beta_hat) <- c("beta0_hat","beta1_hat")
+ll_max <- optim_fit$value
+conv <- optim_fit$convergence
+
+
+beta_hat
+ll_max
+conv
+```
+
+#### Task 4 - Fit the model with `glm()`
+
+```{r}
+model_glm <- glm(high_lifeExp ~ log_gdp, data = data, family = binomial)
+coef_glm <- coef(model_glm)
+coef_glm
+```
+
+#### Task 5 - Compare `optim()` and `glm()` coefficients
+
+```{r}
+
+# Comparison
+comp <- rbind(optim = beta_hat,
+glm = coef_glm)
+comp
+
+# Numerical differences
+diff <- comp["optim", ] - comp["glm", ]
+diff
+```
+
+The estimates from `optim()` and `glm()` are essentially identical, differing only by numerical tolerance: about $10^{-4}$ for $\hat\beta_0$ and $10^{-5}$ for $\hat\beta_1$. This confirms that our log-likelihood implementation and maximisation with `optim()` (BFGS, `fnscale = -1`) recover the same MLEs as the built-in `glm()` fit.
+
+### **Part B: Estimating Uncertainty with Fisher Information**
+
+#### Task 1 - Extract and display the Hessian matrix
+
+```{r}
+H <- optim_fit$hessian
+H
+```
+
+#### Task 2 - Compute and display the Fisher information matrix
+
+```{r}
+I_hat <- -H
+I_hat
+```
+
+#### Task 3 - Compute and display the standard errors
+
+```{r}
+V_hat <- solve(I_hat)
+se <- sqrt(diag(V_hat))
+names(se) <- c("beta0","beta1")
+se
+```
+
+#### Task 4 - Manually construct the 95% confidence intervals
+
+```{r}
+beta_hat_vec <- setNames(optim_fit$par, c("beta0","beta1"))
+z <- 1.96
+CI <- cbind(
+lower = beta_hat_vec - z * se,
+upper = beta_hat_vec + z * se
+)
+CI
+```
+
+## PROFILING LOG LIKLIHOOD
+
+```{r}
+
+# LOG LIKLIHOOD PROFILE
+length <- 50
+beta1_hat <- model_glm$coefficients[2]
+beta0_hat <- model_glm$coefficients[1]
+
+upper_beta1 = beta1_hat +  1.2
+lower_beta1 = beta1_hat -  1.2
+  
+beta1_grid <- seq(lower_beta1 , upper_beta1, 0.0001)
+beta1_likelihood_grid <- numeric(length)
+
+for(i in 1 : length(beta1_grid)) {
+  beta1 <- beta1_grid[i]
+  params <- c(beta0_hat,beta1)
+
+  beta1_likelihood_grid[i] <- loglik_logistic(par = params,
+                                                      y = data$high_lifeExp,
+                                                      x = data$log_gdp)
+}
+
+plot(beta1_grid, beta1_likelihood_grid, 
+     type = "l",                      # line plot
+     col = "darkred",                # line color
+     lwd = 2,                        # line width
+     xlab = expression(beta[1]),     # x-axis label with math notation
+     ylab = "Likelihood",            # y-axis label
+     main = "Profile Likelihood Beta1")   # plot title
+ 
+# Add a vertical dashed blue line at beta1 = 1.591683
+#abline(v = 1.591683, col = "blue", lty = 3, lwd = 2)
+#abline(v = 3.106073, col = "blue", lty = 3, lwd = 2)
+abline(v =  CI[2,1], col = "red", lty = 3, lwd = 2)
+abline(v = CI[2,2], col = "red", lty = 3, lwd = 2)
+abline(v = beta1_hat, col = 'black',lty = 3, lwd = 2)
+max_log_likelihood <- max(beta1_likelihood_grid)
+
+
+```
+
+From the graphic, the profile likelihood curve for $\hat\beta_1$ shows a relatively sharp peak around its maximum. This indicates that the estimate is well-identified and has been estimated with high precision. This is further supported by the small standard error of **0.3863**, suggesting low variability in the estimate. The high precision implies that $\hat \beta_1$ is stable and not overly sensitive to fluctuations in the data. Additionally, the 95% confidence interval $[1.5917, 3.1061]$ is fairly narrow and does not include zero, confirming that the effect of GDP (on the log scale) on life expectancy is both statistically significant and reliably estimated. Together, these results suggest that the model’s predictions regarding the effect of GDP on life expectancy are robust and trustworthy.
+
+```{r}
+
+hist(data$log_gdp, breaks = 30)
+boxplot(data$log_gdp)
+hist(data$gdpPercap, breaks = 30)
+```

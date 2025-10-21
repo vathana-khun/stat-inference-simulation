@@ -32,7 +32,6 @@ print(wald_conf_intervals)
 ```
 
 ```{r}
-
 log_lik <- function(params, X , y){
   beta0 <- params[1]
   beta1 <- params[2]
@@ -46,7 +45,7 @@ result <- optim(par = init_param,
                 fn  = log_lik,
                 X = data$log_gdp,
                 y = data$high_lifeExp,
-                method = "BFGS", # no constraint
+                method = "BFGS",
                 control = list(fnscale = -1), # maximized instead of minimized
                 hessian = TRUE)
 
@@ -54,10 +53,6 @@ result <- optim(par = init_param,
 # Get MLE of lambda:
 mle <- result$par
 cat("MLE of lambda: ", mle, "\n")
-
-# Get the log-likelihood value at the MLE estimate:
-log_lik_value <- result$value
-cat("Log-Likelihood value at MLE: ", log_lik_value, "\n")
 
 ```
 
@@ -111,28 +106,6 @@ max_log_likelihood <- max(beta1_likelihood_grid)
 From the graphic, $\hat\beta1$ profile likelihood curve show a relatively broad and wide curve around it's maximum. This indicated that there is a moderate amount of uncertainty in estimating the true values of $\beta1$. Looking at the 95 confidence interval cut off we can also see that
 
 ```{r}
-# Plot the different beta and the log likelihood for each of the data that we have
-#beta1_grid
-beta0_hat
-# plot 1 liklihood of one data
-beta_loglik_each = numeric(length)
-for (i in 1:length(beta1_grid)){
-  beta1 = beta1_grid[i]
-  beta_loglik_each[i] = log_lik(c(beta0_hat, beta1), data$log_gdp[1],data$high_lifeExp[1])
-}
-
-plot(beta1_grid, beta_loglik_each, 
-     type = "l",                      # line plot
-     col = "darkred",                # line color
-     lwd = 2,                        # line width
-     xlab = expression(beta[1]),     # x-axis label with math notation
-     ylab = "Likelihood",            # y-axis label
-     main = "Likelihood vs Beta1") 
-
-
-```
-
-```{r}
 # Assume: data is your dataset with columns log_gdp and high_lifeExp
 #         log_lik(beta, x, y) is your function to compute the log-likelihood for one point
 
@@ -168,68 +141,10 @@ legend("topright", legend = paste("Data", 1:n), col = rainbow(n), lty = 1, cex =
 ```
 
 ```{r}
-
-# 1. NORMALIZE THE LIKELIHOOD
-# This creates a grid where the peak is 1
-max_log_likelihood <- max(beta1_likelihood_grid)
-normalized_likelihood_grid <- exp(beta1_likelihood_grid - max_log_likelihood)
-
-
-# 2. PLOT THE NORMALIZED PROFILE
-plot(beta1_grid, normalized_likelihood_grid,
-     type = "l",
-     col = "darkred",
-     lwd = 2,
-     xlab = expression(beta[1]),
-     ylab = "Normalized Likelihood",  # <-- Changed y-axis label
-     main = "Normalized Likelihood Profile for Beta1", # <-- Changed title
-     ylim = c(0, 1.05)) # Set y-axis limits from 0 to just above 1
-
-
-# 3. ADD THE 95% CONFIDENCE INTERVAL CUTOFF LINE
-# On the log-likelihood scale, the cutoff was max_ll - 1.92
-# On the normalized likelihood scale, this becomes exp(-1.92)
-cutoff_normalized <- exp(-qchisq(0.95, df = 1) / 2)
-abline(h = cutoff_normalized, col = "green", lty = 2, lwd = 2)
-
-# 4. ADD YOUR EXISTING VERTICAL LINES
-abline(v = 1.591683, col = "blue", lty = 3, lwd = 2)
-abline(v = 3.106073, col = "blue", lty = 3, lwd = 2)
-abline(v = 1.68580, col = "red", lty = 3, lwd = 2)
-abline(v = 3.219953, col = "red", lty = 3, lwd = 2)
-abline(v = beta1_hat, col = 'black', lty = 1, lwd = 2) # Made MLE line solid
-
-
-# 5. ADD A LEGEND
-legend("topright",
-       legend = c("Normalized Likelihood", "MLE of Beta1", "95% CI Cutoff"),
-       col = c("darkred", "black", "green"),
-       lty = c(1, 1, 2),
-       lwd = 2,
-       bty = "n")
-```
-
-1.591683 3.106073
-
-```         
- 1.68580   3.219953
-```
-
-99 :
-
-```         
-1.511315   3.545518
-```
-
-```{r}
 plot( data$gdpPercap, data$lifeExp)
 plot( data$log_gdp, data$lifeExp)
 abline(h = median(data$lifeExp))
 plot( data$log_gdp, data$high_lifeExp)
 
 
-```
-
-```{r}
-summary(lm(data = data, lifeExp ~ log_gdp))
 ```

@@ -60,9 +60,10 @@ mse_trimmed <- mean((sample_trimmed_means - true_mean)^2)
 # Step 4: Summarise results in a table
 results_partA <- data.frame(
   Estimator = c("Mean", "Median", "Trimmed Mean (10%)"),
-  Bias = c(bias_mean, bias_median, bias_trimmed),
-  MCSD = c(mcsd_mean, mcsd_median, mcsd_trimmed),
-  MSE = c(mse_mean, mse_median, mse_trimmed)
+  Esimated = signif(c(mean(sample_means),mean(sample_medians), mean(sample_trimmed_means)),3),
+  Bias = signif(c(bias_mean, bias_median, bias_trimmed),3),
+  MCSD = signif(c(mcsd_mean, mcsd_median, mcsd_trimmed),3),
+  MSE = signif(c(mse_mean, mse_median, mse_trimmed),3)
 )
 results_partA%>%
   kable()%>%
@@ -74,7 +75,7 @@ results_partA%>%
 ## Section 1, Part B: Logging Error Introduces Outlines
 
 ```{r}
-
+set.seed(42)
 # Step 1: Generate 1000 contaminated samples:
 # 90% from Exp(1), 10% from Exp(0.02) to simulate contamination
 lambda1 <- 1
@@ -84,24 +85,13 @@ contamination_rate <- 0.1
 samples_contaminated <- matrix(NA, nrow = n, ncol = n_sim)
 
 for (i in 1:n_sim) {
-  # For each of the n data points, decide which distribution to draw from
-  # 1 = clean (Exp(1)), 2 = contaminated (Exp(0.02))
-  # This is the Bernoulli trial step
-  dist_choice <- sample(c(1, 2), 
-                        size = n, 
-                        replace = TRUE, 
-                        prob = c(1 - contamination_rate, contamination_rate))
+  n1 <- round(n * (1 - contamination_rate))  # number from main distribution
+  n2 <- n - n1                               # number from contamination
   
-  # Generate the values based on the random choices
-  clean_values <- rexp(sum(dist_choice == 1), rate = lambda1)
-  contaminated_values <- rexp(sum(dist_choice == 2), rate = lambda2)
+  # Generate and combine samples
+  samples_contaminated[, i] <- c(rexp(n1, rate = lambda1), rexp(n2, rate = lambda2))
   
-  # Assign them to the correct positions in the sample vector
-  current_sample <- numeric(n)
-  current_sample[dist_choice == 1] <- clean_values
-  current_sample[dist_choice == 2] <- contaminated_values
-  
-  samples_contaminated[, i] <- current_sample
+  # Shuffle to mix contaminated values randomly
   samples_contaminated[, i] <- sample(samples_contaminated[, i])
 }
 
@@ -129,11 +119,12 @@ mse_trimmed_cont <- mean((sample_trimmed_means_cont - true_mean_cont)^2)
 # Step 4: Summarise contaminated results in a table
 results_partB <- data.frame(
   Estimator = c("Mean", "Median", "Trimmed Mean (10%)"),
-  Esimated = c(mean(sample_means_cont),mean(sample_medians_cont), mean(sample_trimmed_means_cont)),
-  Bias = c(bias_mean_cont, bias_median_cont, bias_trimmed_cont),
-  MCSD = c(mcsd_mean_cont, mcsd_median_cont, mcsd_trimmed_cont),
-  MSE = c(mse_mean_cont, mse_median_cont, mse_trimmed_cont)
+  Esimated = signif(c(mean(sample_means_cont), mean(sample_medians_cont), mean(sample_trimmed_means_cont)), 3),
+  Bias = signif(c(bias_mean_cont, bias_median_cont, bias_trimmed_cont), 3),
+  MCSD = signif(c(mcsd_mean_cont, mcsd_median_cont, mcsd_trimmed_cont), 3),
+  MSE = signif(c(mse_mean_cont, mse_median_cont, mse_trimmed_cont), 3)
 )
+
 
 results_partB%>%
   kable()%>%
@@ -146,7 +137,22 @@ results_partA
 ```
 
 ```{r}
+ mcsd_median /mcsd_mean
+ mcsd_trimmed /mcsd_mean
+ # E(trimmed mean / median)
+ mcsd_median / mcsd_trimmed
+```
+
+```{r}
 results_partB
+```
+
+```{r}
+mcsd_median_cont/ mcsd_mean_cont 
+mcsd_trimmed_cont/mcsd_mean_cont 
+
+ # E(trimmed mean / median)
+mcsd_median_cont/mcsd_trimmed_cont
 ```
 
 ## Section 2 — Predicting Good Health (UNSDG 3)
@@ -351,4 +357,72 @@ From the graphic, the profile likelihood curve for $\hat\beta_1$ shows a relativ
 hist(data$log_gdp, breaks = 30)
 boxplot(data$log_gdp)
 hist(data$gdpPercap, breaks = 30)
+```
+
+```{r}
+model_glm
+```
+
+$logit(p) = \beta_0 + \beta_1 \log(x)$
+
+$logit(p) = -20.382+ 2.349\times \log(x)$
+
+```{r}
+exp(2.349)
+```
+
+OR = 1.25, for every ln(1.1) = 10% increase in gdp per capita, you are 25% more likely to be higher life expectancy
+
+```{r}
+CI
+```
+
+```{r}
+exp(1.59169* log(1.10)) - 1
+exp(2.349* log(1.10)) - 1
+exp(3.106091* log(1.10)) - 1
+# 10 -30 range is good 
+```
+
+exp(20.382/2.349)
+
+```{r}
+# ln(odd) = 0 , odd = 1 so 50/50
+exp(20.382/2.349)
+```
+
+$-20.382+ 2.349*log(x) = 0$
+
+GDP = 5865.739 median
+
+odd = 1
+
+```         
+> 5865.739 - 5865.739 * 0.1
+[1] 5279.165
+> -20.382+ 2.349*log(5279.165)
+[1] -0.247492
+> exp(-0.247492)
+[1] 0.7807565 # less likely below 5279.165 about 21% less likely to have higher life expectancy
+```
+
+```{r}
+median(data$gdpPercap)
+```
+
+```{r}
+half_prop = exp(20.382/2.349)
+red1.10 = half_prop*(1- 0.1)
+ln_red1.10= -20.382+ 2.349*log(red1.10)
+red1.10
+ln_red1.10
+exp(ln_red1.10) - 1 
+```
+
+```{r}
+red2.10 = median(data$gdpPercap)*(1 - 0.1)
+ln_red2.10 = -20.382+ 2.349*log(red2.10)
+red2.10
+ln_red2.10
+exp(ln_red2.10) - 1 
 ```

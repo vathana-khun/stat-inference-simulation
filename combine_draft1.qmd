@@ -148,12 +148,43 @@ results_partB
 ```
 
 ```{r}
-mcsd_median_cont/ mcsd_mean_cont 
-mcsd_trimmed_cont/mcsd_mean_cont 
+mse_median_cont/ mse_mean_cont 
+mse_trimmed_cont/mse_mean_cont 
+mse_median_cont/mse_trimmed_cont
 
- # E(trimmed mean / median)
-mcsd_median_cont/mcsd_trimmed_cont
 ```
+
+## **Section 1: Reflection & Questions**
+
+This report analyzes the simulation results from Parts A and B, assessing the performance of the sample mean, median, and 10% trimmed mean as estimators for the typical completion time of security training.
+
+**1. Estimator Performance and Robustness**
+
+In the clean data scenario, the sample mean is the superior estimator. Its bias is negligible (-0.00173), and it achieves the lowest Mean Squared Error (MSE) of 0.00411, indicating high accuracy and precision. In contrast, the median and trimmed mean are noticeably biased downwards (-0.307 and -0.170, respectively).
+
+The introduction of outliers in the contaminated data scenario dramatically alters this assessment. The sample mean's estimate jumped from 0.998 to 5.900, while its Monte Carlo Standard Deviation (MCSD) went from 0.0641 to 1.024. This highlights its extreme sensitivity to outliers.
+
+In this contaminated setting, the median and 10% trimmed mean proved to be far more robust. Their estimates shifted only slightly, and their MCSD remained small and stable (0.0752 for the median and 0.0771 for the trimmed mean). This stability in the face of extreme observations is the hallmark of a robust estimator and is clearly supported by the simulation results. Overall in the contaminated data, all the estimator have their values increase.
+
+#### 2. Relative Efficiency
+
+An estimator's efficiency is its overall quality, considering both its precision (low variance) and accuracy (low bias). When estimators are biased, the Mean Squared Error (MSE), which accounts for both sources of error (MSE = Variance + Bias²), is the most appropriate measure for comparing efficiency.
+
+In the clean data scenario, the sample mean is the most efficient estimator. Its MSE of 0.00411 is nearly 8 times smaller than the trimmed mean's and 24 times smaller than the median's. In the absence of outliers, the mean's use of all data points makes it the superior choice.
+
+In the contaminated data scenario, the 10% trimmed mean is the most efficient robust estimator. In this setting, the goal is to estimate the central tendency of the primary distribution, not the contaminated mixture. The large MSE values for the median and trimmed mean reflect their large bias relative to the mixture mean of 5.9, but this is by design. When comparing the two robust estimators for their intended purpose, the trimmed mean (MSE = 23.20) outperforms the median (MSE = 25.90). Although the median is marginally more precise (lower MCSD), the trimmed mean's smaller bias makes it the more efficient choice overall. The relative efficiency of the median to the trimmed mean is 23.20 / 25.90 ≈ 0.89, indicating that the median is about 11% less efficient in this context.
+
+### Conclusion and Recommendation
+
+The choice of estimator should be guided by the underlying data characteristics and the analytical goal. While the sample mean is optimal for clean, well-behaved data, it is unreliable when outliers are present.
+
+Given that the IT security team's data contains known logging errors, a robust estimator is essential to avoid misleading conclusions. Our analysis demonstrates that both the median and the 10% trimmed mean are effective at resisting the influence of these outliers.
+
+Based on statistical efficiency, the 10% trimmed mean is the recommended estimator, as it provides the best balance of accuracy and precision in the contaminated scenario.
+
+### Recommendation for the IT Security Team:
+
+To report on the typical employee completion time, we recommend using the 10% trimmed mean, which yields an estimate of 1.08 days. An acceptable and more easily interpretable alternative is the median, which is 0.808 days. Both metrics provide a reliable and robust measure of central tendency that is not skewed by the erroneous data points. Reporting either of these values will lead to more accurate insights and better-informed policy decisions regarding employee training compliance.
 
 ## Section 2 — Predicting Good Health (UNSDG 3)
 
@@ -363,51 +394,44 @@ hist(data$gdpPercap, breaks = 30)
 model_glm
 ```
 
-$logit(p) = \beta_0 + \beta_1 \log(x)$
+$\log() = \beta_0 + \beta_1 \log(x)$
 
 $logit(p) = -20.382+ 2.349\times \log(x)$
 
-```{r}
-exp(2.349)
-```
+$$
+g(x_1) = \beta_0 + \beta_1\log x_1\\
+g(x_2) = \beta_0 + \beta_1\log x_2\\
+g(x_2)- g(x_1)= \beta_0 + \beta_1 \log x_2 - \beta_0 - \beta_1 \log x_1 \\
+g(x_2)- g(x_1)= \beta_1(\log x_2- \log x_1)  \\
+\log(\frac{p_1}{1-p_1}) - \log(\frac{p_o}{1-p_0}) =  \beta_1\log(\frac{x_2}{x_1}) \\
+\log\frac{\frac{p_1}{1-p_1}}{\frac{p_o}{1-p_0}} = \beta_1(\log\frac{x_2}{x_1})\\
+OR(x_1,x_2) = \exp(\beta_1\log(\frac{x_2}{x_1}))
+$$
 
-OR = 1.25, for every ln(1.1) = 10% increase in gdp per capita, you are 25% more likely to be higher life expectancy
-
 ```{r}
-CI
-```
-
-```{r}
-exp(1.59169* log(1.10)) - 1
+exp(1.59169* log(1.10)) - 1 # upper range
 exp(2.349* log(1.10)) - 1
-exp(3.106091* log(1.10)) - 1
-# 10 -30 range is good 
+exp(3.106091* log(1.10)) - 1 # lower range
+# 10 -30 range is good - 1
 ```
 
-exp(20.382/2.349)
+OR = 1.25, for every ln(1.1) = 10% increase in gdp per capita, you are 25% more likely to be higher life expectancy.
+
+for every 10% you are (16,34) more more likely to be in higher life expectancy
+
+Solving for when the odd are 1 or 50/50 of likely to be life expectancy
+
+$-20.382+ 2.349*\log(x) = 0$
+
+$x = \exp(20.382/2.349)$
+
+GDP = 5865.739 odd =1 point
+
+odd = 1
 
 ```{r}
 # ln(odd) = 0 , odd = 1 so 50/50
 exp(20.382/2.349)
-```
-
-$-20.382+ 2.349*log(x) = 0$
-
-GDP = 5865.739 median
-
-odd = 1
-
-```         
-> 5865.739 - 5865.739 * 0.1
-[1] 5279.165
-> -20.382+ 2.349*log(5279.165)
-[1] -0.247492
-> exp(-0.247492)
-[1] 0.7807565 # less likely below 5279.165 about 21% less likely to have higher life expectancy
-```
-
-```{r}
-median(data$gdpPercap)
 ```
 
 ```{r}
@@ -416,13 +440,46 @@ red1.10 = half_prop*(1- 0.1)
 ln_red1.10= -20.382+ 2.349*log(red1.10)
 red1.10
 ln_red1.10
-exp(ln_red1.10) - 1 
+exp(ln_red1.10) - 1  # less likely below 5279.165 about 21% less likely to have higher life expectancy
 ```
 
 ```{r}
+median(data$gdpPercap)
 red2.10 = median(data$gdpPercap)*(1 - 0.1)
 ln_red2.10 = -20.382+ 2.349*log(red2.10)
 red2.10
 ln_red2.10
 exp(ln_red2.10) - 1 
 ```
+
+### **Section 2: Reflection & Questions**
+
+This section interprets the findings from the logistic regression model, which predicts the likelihood of a country having a high life expectancy based on its GDP per capita. The results are contextualized for a non-technical audience with a focus on their real-world policy implications for United Nations Sustainable Development Goal 3 (UNSDG 3).
+
+#### **Explaining the Findings to a Non-Technical Audience**
+
+Our statistical analysis reveals a strong and reliable link between a nation's economic prosperity and the health of its population. The key findings can be summarized in two points:
+
+1.  **Wealthier is Healthier:** For every **10% increase** in a country's GDP per capita, the odds of its population having a high life expectancy (i.e., above the global median) **increase by approximately 25%**, (95% confidence interval between16% and 34% increase). This demonstrates a clear, positive relationship where economic growth is associated with significantly better health outcomes.
+
+2.  **A Critical Income Threshold:** We identified a "tipping point" for GDP per capita at approximately **\$5,866**. Countries below this income level are substantially less likely to achieve a high life expectancy, while those above it are progressively more likely. For instance, a country with a GDP per capita 10% below this threshold is about 22% less likely to have a high life expectancy compared to a country at the threshold.
+
+In simple terms, while not the only factor, economic health is a powerful predictor of a population's physical well-being.
+
+#### **Relationship Between GDP per Capita and Life Expectancy**
+
+The statistical model confirms a significant positive relationship between the logarithm of GDP per capita and the probability of having a high life expectancy. The estimated coefficient for log(GDP), $\hat \beta_1 = 2.349$, is statistically significant, with a 95% confidence interval of \[1.59, 3.11\] that does not include zero. The sharpness of the profile likelihood curve further reinforces that this estimate is precise and stable.
+
+The use of a logarithmic scale for GDP is important. It implies that the impact of economic growth on life expectancy is most pronounced at lower income levels. For example, an increase in GDP per capita from \$1,000 to \$2,000 has the same positive effect on the odds of high life expectancy as an increase from \$10,000 to \$20,000.
+
+#### **Implications for UNSDG Goal 3 and Global Health Investments**
+
+These findings have direct implications for achieving UNSDG Goal 3 ("ensure healthy lives and promote well-being for all"). The strong link between economic status and health suggests that global health strategies should be integrated with economic development initiatives.
+
+This analysis can help guide global health investments in a targeted manner:
+
+-   **Prioritize Countries Near the Threshold:** The greatest return on investment for improving life expectancy may be found in countries with a GDP per capita just below the **\$5,866 threshold**. For these nations, relatively modest economic assistance could push them past this tipping point, leading to substantial gains in health outcomes.
+
+-   **Tailor Strategies:** For countries far below this threshold, broad economic development and investment in fundamental infrastructure (e.g., sanitation, education, basic healthcare) are critical prerequisites for improving life expectancy. For nations already above the threshold, health investments might focus more on advanced healthcare, lifestyle-related diseases, and promoting well-being in aging populations.
+
+By using data to identify this economic threshold, policymakers can better allocate resources to where they will have the most significant and immediate impact on global health.

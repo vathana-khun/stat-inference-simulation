@@ -11,7 +11,9 @@ format: pdf
 editor: visual
 ---
 
-## Part A: Natural Variation in Completion Times
+## **Section 1: Estimating Typical Completion Time for Security Training**
+
+### Section 1, Part A: Natural Variation in Completion Times
 
 ```{r}
 #| message: false
@@ -66,13 +68,13 @@ results_partA <- data.frame(
   MSE = signif(c(mse_mean, mse_median, mse_trimmed),3)
 )
 results_partA%>%
-  kable()%>%
+  kable(caption = "Section 1 Part A: Monte Carlo summary (clean data)")%>%
   kable_classic(full_width = F, html_font = "Cambria")
   
 
 ```
 
-## Section 1, Part B: Logging Error Introduces Outlines
+### Section 1, Part B: Logging Error Introduces Outlines
 
 ```{r}
 set.seed(42)
@@ -127,7 +129,7 @@ results_partB <- data.frame(
 
 
 results_partB%>%
-  kable()%>%
+  kable(caption = "Section 1 Part B: Monte Carlo summary (contaminated data)")%>%
   kable_classic(full_width = F, html_font = "Cambria")
 
 ```
@@ -154,7 +156,7 @@ mse_median_cont/mse_trimmed_cont
 
 ```
 
-## **Section 1: Reflection & Questions**
+### **Section 1, Part C: Reflection & Questions**
 
 This report analyzes the simulation results from Parts A and B, assessing the performance of the sample mean, median, and 10% trimmed mean as estimators for the typical completion time of security training.
 
@@ -186,9 +188,9 @@ Based on statistical efficiency, the 10% trimmed mean is the recommended estimat
 
 To report on the typical employee completion time, we recommend using the 10% trimmed mean, which yields an estimate of 1.08 days. An acceptable and more easily interpretable alternative is the median, which is 0.808 days. Both metrics provide a reliable and robust measure of central tendency that is not skewed by the erroneous data points. Reporting either of these values will lead to more accurate insights and better-informed policy decisions regarding employee training compliance.
 
-## Section 2 — Predicting Good Health (UNSDG 3)
+## **Section 2: Predicting Good Health – A Data-Driven Perspective on UNSDG Goal 3**
 
-### Part A: Building the Model with Maximum Likelihood
+### Section 2, Part A: Building the Model with Maximum Likelihood
 
 #### Task 1 - Log-likelihood
 
@@ -301,7 +303,7 @@ diff
 
 The estimates from `optim()` and `glm()` are essentially identical, differing only by numerical tolerance: about $10^{-4}$ for $\hat\beta_0$ and $10^{-5}$ for $\hat\beta_1$. This confirms that our log-likelihood implementation and maximisation with `optim()` (BFGS, `fnscale = -1`) recover the same MLEs as the built-in `glm()` fit.
 
-### **Part B: Estimating Uncertainty with Fisher Information**
+### Section 2, **Part B: Estimating Uncertainty with Fisher Information**
 
 #### Task 1 - Extract and display the Hessian matrix
 
@@ -338,7 +340,7 @@ upper = beta_hat_vec + z * se
 CI
 ```
 
-## PROFILING LOG LIKLIHOOD
+### **Section 2, Part C: Visualising Parameter Stability with Profile Likelihood (Hard)**
 
 ```{r}
 
@@ -452,7 +454,6 @@ ln_red2.10
 exp(ln_red2.10) - 1 
 ```
 
-### **Section 2: Reflection & Questions**
 
 This section interprets the findings from the logistic regression model, which predicts the likelihood of a country having a high life expectancy based on its GDP per capita. The results are contextualized for a non-technical audience with a focus on their real-world policy implications for United Nations Sustainable Development Goal 3 (UNSDG 3).
 

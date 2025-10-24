@@ -41,7 +41,8 @@ sample_means <- colMeans(samples)
 sample_medians <- apply(samples, 2, median)
 sample_trimmed_means <- apply(samples, 2, function(x) mean(x, trim = 0.1))
 
-# Step 3: Calculate Bias, Monte Carlo Standard Deviation (MCSD), and Mean Squared Error (MSE)
+# Step 3: Calculate Bias, Monte Carlo Standard Deviation (MCSD), 
+#and Mean Squared Error (MSE)
 true_mean <- 1  # Theoretical mean of Exponential(1)
 
 # Bias = mean of estimates - true mean
@@ -62,7 +63,8 @@ mse_trimmed <- mean((sample_trimmed_means - true_mean)^2)
 # Step 4: Summarise results in a table
 results_partA <- data.frame(
   Estimator = c("Mean", "Median", "Trimmed Mean (10%)"),
-  Esimated = signif(c(mean(sample_means),mean(sample_medians), mean(sample_trimmed_means)),3),
+  Esimated = signif(c(mean(sample_means),mean(sample_medians),
+                      mean(sample_trimmed_means)),3),
   Bias = signif(c(bias_mean, bias_median, bias_trimmed),3),
   MCSD = signif(c(mcsd_mean, mcsd_median, mcsd_trimmed),3),
   MSE = signif(c(mse_mean, mse_median, mse_trimmed),3)
@@ -91,7 +93,8 @@ for (i in 1:n_sim) {
   n2 <- n - n1                               # number from contamination
   
   # Generate and combine samples
-  samples_contaminated[, i] <- c(rexp(n1, rate = lambda1), rexp(n2, rate = lambda2))
+  samples_contaminated[, i] <- c(rexp(n1, rate = lambda1), 
+                                 rexp(n2, rate = lambda2))
   
   # Shuffle to mix contaminated values randomly
   samples_contaminated[, i] <- sample(samples_contaminated[, i])
@@ -100,7 +103,8 @@ for (i in 1:n_sim) {
 # Step 2: Compute estimators for contaminated samples
 sample_means_cont <- colMeans(samples_contaminated)
 sample_medians_cont <- apply(samples_contaminated, 2, median)
-sample_trimmed_means_cont <- apply(samples_contaminated, 2, function(x) mean(x, trim = 0.1))
+sample_trimmed_means_cont <- apply(samples_contaminated, 2, 
+                                   function(x) mean(x, trim = 0.1))
 
 # Step 3: Calculate Bias, MCSD, MSE for contaminated data
 # True mean for mixture: 0.9 * 1/lambda1 + 0.1 * 1/lambda2
@@ -121,7 +125,8 @@ mse_trimmed_cont <- mean((sample_trimmed_means_cont - true_mean_cont)^2)
 # Step 4: Summarise contaminated results in a table
 results_partB <- data.frame(
   Estimator = c("Mean", "Median", "Trimmed Mean (10%)"),
-  Esimated = signif(c(mean(sample_means_cont), mean(sample_medians_cont), mean(sample_trimmed_means_cont)), 3),
+  Esimated = signif(c(mean(sample_means_cont), mean(sample_medians_cont), 
+                      mean(sample_trimmed_means_cont)), 3),
   Bias = signif(c(bias_mean_cont, bias_median_cont, bias_trimmed_cont), 3),
   MCSD = signif(c(mcsd_mean_cont, mcsd_median_cont, mcsd_trimmed_cont), 3),
   MSE = signif(c(mse_mean_cont, mse_median_cont, mse_trimmed_cont), 3)
@@ -135,25 +140,32 @@ results_partB%>%
 ```
 
 ```{r}
+cat(
+  mcsd_median / mcsd_mean, ", ",
+  mcsd_trimmed / mcsd_mean, ", ",
+  mcsd_median / mcsd_trimmed, "\n"
+)
+```
+
+In clean data use, the mean the is the overall best estimator.
+
+```{r}
+cat(
+mse_median_cont/ mse_mean_cont, ", ",
+mse_trimmed_cont/mse_mean_cont, ", ",
+mse_median_cont/mse_trimmed_cont, "\n"
+)
+
+```
+
+Since mean is skewed by outlier, the only relevant comparison is between median and trimmed mean. Overall Trimmed mean is slightly preferred with a 1.117837 ratio of efficiency
+
+```{r}
 results_partA
 ```
 
 ```{r}
- mcsd_median /mcsd_mean
- mcsd_trimmed /mcsd_mean
- # E(trimmed mean / median)
- mcsd_median / mcsd_trimmed
-```
-
-```{r}
 results_partB
-```
-
-```{r}
-mse_median_cont/ mse_mean_cont 
-mse_trimmed_cont/mse_mean_cont 
-mse_median_cont/mse_trimmed_cont
-
 ```
 
 ### **Section 1, Part C: Reflection & Questions**
@@ -164,9 +176,9 @@ This report analyzes the simulation results from Parts A and B, assessing the pe
 
 In the clean data scenario, the sample mean is the superior estimator. Its bias is negligible (-0.00173), and it achieves the lowest Mean Squared Error (MSE) of 0.00411, indicating high accuracy and precision. In contrast, the median and trimmed mean are noticeably biased downwards (-0.307 and -0.170, respectively).
 
-The introduction of outliers in the contaminated data scenario dramatically alters this assessment. The sample mean's estimate jumped from 0.998 to 5.900, while its Monte Carlo Standard Deviation (MCSD) went from 0.0641 to 1.024. This highlights its extreme sensitivity to outliers.
+The introduction of outliers in the contaminated data scenario dramatically alters this assessment. The sample mean's estimate jumped from 0.998 to 5.900, while its Monte Carlo Standard Deviation (MCSD) went from 0.0641 to 1.01. This highlights its extreme sensitivity to outliers.
 
-In this contaminated setting, the median and 10% trimmed mean proved to be far more robust. Their estimates shifted only slightly, and their MCSD remained small and stable (0.0752 for the median and 0.0771 for the trimmed mean). This stability in the face of extreme observations is the hallmark of a robust estimator and is clearly supported by the simulation results. Overall in the contaminated data, all the estimator have their values increase.
+In this contaminated setting, the median and 10% trimmed mean proved to be far more robust. Their estimates shifted only slightly, and their MCSD remained small and stable (0.0764 for the median and 0.0769 for the trimmed mean). This stability in the face of extreme observations is the hallmark of a robust estimator and is clearly supported by the simulation results. Overall in the contaminated data, all the estimator have their values increase.
 
 #### 2. Relative Efficiency
 
@@ -174,11 +186,11 @@ An estimator's efficiency is its overall quality, considering both its precision
 
 In the clean data scenario, the sample mean is the most efficient estimator. Its MSE of 0.00411 is nearly 8 times smaller than the trimmed mean's and 24 times smaller than the median's. In the absence of outliers, the mean's use of all data points makes it the superior choice.
 
-In the contaminated data scenario, the 10% trimmed mean is the most efficient robust estimator. In this setting, the goal is to estimate the central tendency of the primary distribution, not the contaminated mixture. The large MSE values for the median and trimmed mean reflect their large bias relative to the mixture mean of 5.9, but this is by design. When comparing the two robust estimators for their intended purpose, the trimmed mean (MSE = 23.20) outperforms the median (MSE = 25.90). Although the median is marginally more precise (lower MCSD), the trimmed mean's smaller bias makes it the more efficient choice overall. The relative efficiency of the median to the trimmed mean is 23.20 / 25.90 ≈ 0.89, indicating that the median is about 11% less efficient in this context.
+In the contaminated data scenario, the 10% trimmed mean is the most efficient robust estimator. In this setting, the goal is to estimate the central tendency of the primary distribution, not the contaminated mixture. The large MSE values for the median and trimmed mean reflect their large bias relative to the mixture distribution mean of 5.9, but this is by design. When comparing the two robust estimators for their intended purpose, the trimmed mean (MSE = 23.20) outperforms the median (MSE = 25.90). Although the median is marginally more precise (lower MCSD), the trimmed mean's smaller bias makes it the more efficient choice overall. The relative efficiency of the trimmed mean to the median is 25.90 / 23.20≈ 1.118, indicating that trimmed mean is preffered.
 
 ### Conclusion and Recommendation
 
-The choice of estimator should be guided by the underlying data characteristics and the analytical goal. While the sample mean is optimal for clean, well-behaved data, it is unreliable when outliers are present.
+The choice of estimator should be guided by the underlying data characteristics and the analytically goal. Whether outliers is present, whether robustness is needed or not. While the sample mean is optimal for clean, well-behaved data, it is unreliable when outliers are present.
 
 Given that the IT security team's data contains known logging errors, a robust estimator is essential to avoid misleading conclusions. Our analysis demonstrates that both the median and the 10% trimmed mean are effective at resisting the influence of these outliers.
 
@@ -227,7 +239,7 @@ This function `loglik_logistic` takes the parameter vector `par = c(beta0, beta1
 
 ### Data preparation
 
-```{r}
+```{r,warning=FALSE, message = FALSE}
 library(dplyr)
 library(ggplot2)
 library(gapminder)
@@ -240,17 +252,13 @@ log_gdp = log(gdpPercap)
 )
 ```
 
-### Response and Predictor
+#### Task 3 - Maximize log-likelihood with `optim()`
 
 ```{r}
+# Response and Predictor
 y <- data$high_lifeExp
 x <- data$log_gdp
 stopifnot(length(y) == length(x))
-```
-
-#### Task 3 - Maximise log-likelihood with `optim()`
-
-```{r}
 
 # Initial values for beta0 and beta1
 par0 <- c(0, 0)
@@ -274,9 +282,12 @@ ll_max <- optim_fit$value
 conv <- optim_fit$convergence
 
 
-beta_hat
-ll_max
-conv
+cat(
+  "beta_hat:\n", paste(capture.output(print(beta_hat)), collapse = "\n"), "\n\n",
+  "ll_max:", ll_max, "\n",
+  "convergence:", conv, "\n"
+)
+
 ```
 
 #### Task 4 - Fit the model with `glm()`
@@ -385,75 +396,60 @@ max_log_likelihood <- max(beta1_likelihood_grid)
 
 From the graphic, the profile likelihood curve for $\hat\beta_1$ shows a relatively sharp peak around its maximum. This indicates that the estimate is well-identified and has been estimated with high precision. This is further supported by the small standard error of **0.3863**, suggesting low variability in the estimate. The high precision implies that $\hat \beta_1$ is stable and not overly sensitive to fluctuations in the data. Additionally, the 95% confidence interval $[1.5917, 3.1061]$ is fairly narrow and does not include zero, confirming that the effect of GDP (on the log scale) on life expectancy is both statistically significant and reliably estimated. Together, these results suggest that the model’s predictions regarding the effect of GDP on life expectancy are robust and trustworthy.
 
-```{r}
-
-hist(data$log_gdp, breaks = 30)
-boxplot(data$log_gdp)
-hist(data$gdpPercap, breaks = 30)
-```
-
-```{r}
-model_glm
-```
-
-$\log() = \beta_0 + \beta_1 \log(x)$
-
-$logit(p) = -20.382+ 2.349\times \log(x)$
+### Analyzing the Model
 
 $$
-g(x_1) = \beta_0 + \beta_1\log x_1\\
-g(x_2) = \beta_0 + \beta_1\log x_2\\
-g(x_2)- g(x_1)= \beta_0 + \beta_1 \log x_2 - \beta_0 - \beta_1 \log x_1 \\
-g(x_2)- g(x_1)= \beta_1(\log x_2- \log x_1)  \\
-\log(\frac{p_1}{1-p_1}) - \log(\frac{p_o}{1-p_0}) =  \beta_1\log(\frac{x_2}{x_1}) \\
-\log\frac{\frac{p_1}{1-p_1}}{\frac{p_o}{1-p_0}} = \beta_1(\log\frac{x_2}{x_1})\\
-OR(x_1,x_2) = \exp(\beta_1\log(\frac{x_2}{x_1}))
+\begin{aligned}
+\text{Let } g(x) &= \beta_0 + \beta_1\log x\\
+\\
+g(x_1) &= \beta_0 + \beta_1\log x_1\\
+g(x_2) &= \beta_0 + \beta_1\log x_2\\
+g(x_2)- g(x_1)&= \beta_0 + \beta_1 \log x_2 - \beta_0 - \beta_1 \log x_1 \\
+g(x_2)- g(x_1)&= \beta_1(\log x_2- \log x_1)  \\
+\log(\frac{p_1}{1-p_1}) - \log(\frac{p_o}{1-p_0}) &=  \beta_1\log(\frac{x_2}{x_1}) \\
+\log\frac{\frac{p_1}{1-p_1}}{\frac{p_o}{1-p_0}} &= \beta_1(\log\frac{x_2}{x_1})\\
+OR(x_1,x_2) &= \exp(\beta_1\log(\frac{x_2}{x_1}))
+\end{aligned}
 $$
 
 ```{r}
-exp(1.59169* log(1.10)) - 1 # upper range
-exp(2.349* log(1.10)) - 1
-exp(3.106091* log(1.10)) - 1 # lower range
-# 10 -30 range is good - 1
+# Odds ratio interval calculation
+cat(
+  "95% Odds Ratio Interval:\n",
+  "Upper range: ", exp(1.59169 * log(1.10)) - 1, "\n",
+  "Middle range: ", exp(2.349 * log(1.10)) - 1, "\n",
+  "Lower range: ", exp(3.106091 * log(1.10)) - 1, "\n"
+)
+
 ```
 
-OR = 1.25, for every ln(1.1) = 10% increase in gdp per capita, you are 25% more likely to be higher life expectancy.
+The estimated odds ratio is **1.25**, indicating that for every 10% increase in GDP per capita, a country is about **25% more likely** to have a higher life expectancy. The **95% odds ratio interval** falls between **1.16 and 1.34**, suggesting a consistently positive association between economic growth and higher life expectancy.
 
-for every 10% you are (16,34) more more likely to be in higher life expectancy
+Finding the mid point where the probability of being in higher life expectancy is 50%
 
-Solving for when the odd are 1 or 50/50 of likely to be life expectancy
-
-$-20.382+ 2.349*\log(x) = 0$
-
-$x = \exp(20.382/2.349)$
-
-GDP = 5865.739 odd =1 point
-
-odd = 1
+$-20.382+ 2.349*\log(x) = 0 \\x = \exp(20.382/2.349)$
 
 ```{r}
 # ln(odd) = 0 , odd = 1 so 50/50
 exp(20.382/2.349)
 ```
 
-```{r}
-half_prop = exp(20.382/2.349)
-red1.10 = half_prop*(1- 0.1)
-ln_red1.10= -20.382+ 2.349*log(red1.10)
-red1.10
-ln_red1.10
-exp(ln_red1.10) - 1  # less likely below 5279.165 about 21% less likely to have higher life expectancy
+```{r, warning=FALSE, message=FALSE}
+# Odds ratio and GDP reduction calculation
+half_prop <- exp(20.382 / 2.349)
+red1.10 <- half_prop * (1 - 0.1)
+ln_red1.10 <- -20.382 + 2.349 * log(red1.10)
+
+cat(
+  "Half proportion (exp(20.382 / 2.349)):", round(half_prop, 3), "\n",
+  "Reduced GDP (10% lower):", round(red1.10, 3), "\n",
+  "Log-odds at reduced GDP:", round(ln_red1.10, 3), "\n",
+  "Less likely (exp(ln_red1.10) - 1):", round(exp(ln_red1.10) - 1, 3), "\n",
+  "→ About 21% less likely to have higher life expectancy below GDP ≈ 5279.17\n"
+)
 ```
 
-```{r}
-median(data$gdpPercap)
-red2.10 = median(data$gdpPercap)*(1 - 0.1)
-ln_red2.10 = -20.382+ 2.349*log(red2.10)
-red2.10
-ln_red2.10
-exp(ln_red2.10) - 1 
-```
-
+### Part D: Reflection & Questions
 
 This section interprets the findings from the logistic regression model, which predicts the likelihood of a country having a high life expectancy based on its GDP per capita. The results are contextualized for a non-technical audience with a focus on their real-world policy implications for United Nations Sustainable Development Goal 3 (UNSDG 3).
 
@@ -469,9 +465,11 @@ In simple terms, while not the only factor, economic health is a powerful predic
 
 #### **Relationship Between GDP per Capita and Life Expectancy**
 
-The statistical model confirms a significant positive relationship between the logarithm of GDP per capita and the probability of having a high life expectancy. The estimated coefficient for log(GDP), $\hat \beta_1 = 2.349$, is statistically significant, with a 95% confidence interval of \[1.59, 3.11\] that does not include zero. The sharpness of the profile likelihood curve further reinforces that this estimate is precise and stable.
+Our logistic regression model confirms a significant positive relationship between the logarithm of GDP per capita and the probability of achieving a high life expectancy. The model is defined by the equation:
 
-The use of a logarithmic scale for GDP is important. It implies that the impact of economic growth on life expectancy is most pronounced at lower income levels. For example, an increase in GDP per capita from \$1,000 to \$2,000 has the same positive effect on the odds of high life expectancy as an increase from \$10,000 to \$20,000.
+$Log-odds(High Life Expectancy) = -20.382 + 2.349 * log(GDP per capita)$
+
+The coefficient for the logarithm of GDP per capita (β1 = 2.349) is statistically significant. The use of a logarithmic scale for GDP is important as it indicates that the impact of economic growth on life expectancy is most pronounced at lower income levels. This means an increase in GDP from \$1,000 to \$2,000 per capita provides the same boost to the odds of a high life expectancy as an increase from \$10,000 to \$20,000. This suggests that while economic growth consistently has a positive effect, its marginal impact on health outcomes diminishes as a country becomes wealthier.
 
 #### **Implications for UNSDG Goal 3 and Global Health Investments**
 
@@ -481,6 +479,6 @@ This analysis can help guide global health investments in a targeted manner:
 
 -   **Prioritize Countries Near the Threshold:** The greatest return on investment for improving life expectancy may be found in countries with a GDP per capita just below the **\$5,866 threshold**. For these nations, relatively modest economic assistance could push them past this tipping point, leading to substantial gains in health outcomes.
 
--   **Tailor Strategies:** For countries far below this threshold, broad economic development and investment in fundamental infrastructure (e.g., sanitation, education, basic healthcare) are critical prerequisites for improving life expectancy. For nations already above the threshold, health investments might focus more on advanced healthcare, lifestyle-related diseases, and promoting well-being in aging populations.
+-   **Tailor Strategies:** For countries far below this threshold, broad economic development and investment in fundamental infrastructure are critical prerequisites for improving life expectancy. For nations already above the threshold, health investments might focus more on advanced healthcare, lifestyle-related diseases, and promoting well-being in aging populations.
 
 By using data to identify this economic threshold, policymakers can better allocate resources to where they will have the most significant and immediate impact on global health.
